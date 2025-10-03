@@ -90,12 +90,15 @@ cd gembok-bill
 
 ```bash
 # Install semua dependencies
-npm install
+npm install -g npm@11.6.1
 
+npm i node-routeros-v2
 # Script postinstall akan otomatis menjalankan:
 # - npm rebuild (rebuild native modules)
 # - npm run check-deps (cek dependencies)
 
+#Edit const { RouterOSAPI } = require('node-routeros'); >> const { RouterOSAPI } = require('node-routeros-v2');
+nano /home/acs/gembok-bill/config/mikrotik.js
 # Jika masih ada masalah, coba manual rebuild:
 npm rebuild sqlite3
 
