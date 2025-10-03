@@ -97,6 +97,8 @@ npm i node-routeros-v2
 # - npm rebuild (rebuild native modules)
 # - npm run check-deps (cek dependencies)
 
+apt install -y curl git build-essential python3-dev libsqlite3-dev
+
 #Edit const { RouterOSAPI } = require('node-routeros'); >> const { RouterOSAPI } = require('node-routeros-v2');
 nano /home/acs/gembok-bill/config/mikrotik.js
 # Jika masih ada masalah, coba manual rebuild:
