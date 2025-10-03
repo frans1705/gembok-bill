@@ -1,5 +1,5 @@
 // Modul untuk koneksi dan operasi Mikrotik
-const { RouterOSAPI } = require('node-routeros');
+const { RouterOSAPI } = require('node-routeros-v2');
 const logger = require('./logger');
 const { getSetting } = require('./settingsManager');
 const mysql = require('mysql2/promise');
@@ -20,10 +20,10 @@ function setSock(sockInstance) {
 async function connectToMikrotik() {
     try {
         // Dapatkan konfigurasi Mikrotik
-        const host = getSetting('mikrotik_host', '192.168.8.1');
+        const host = getSetting('mikrotik_host', '192.168.99.1');
         const port = parseInt(getSetting('mikrotik_port', '8728'));
-        const user = getSetting('mikrotik_user', 'admin');
-        const password = getSetting('mikrotik_password', 'admin');
+        const user = getSetting('mikrotik_user', 'genieacs');
+        const password = getSetting('mikrotik_password', 'n4ncy.n3t');
         
         if (!host || !user || !password) {
             logger.error('Mikrotik configuration is incomplete');
