@@ -67,7 +67,7 @@
 ## 🚀 Instalasi
 
 ### Persyaratan Sistem
-
+- **Ubuntu 22.04**
 - **Node.js** v18+ (direkomendasikan v20+)
 - **npm** atau yarn
 - **GenieACS** API access
