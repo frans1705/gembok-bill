@@ -99,8 +99,14 @@ npm i node-routeros-v2
 # Script postinstall akan otomatis menjalankan:
 # - npm rebuild (rebuild native modules)
 # - npm run check-deps (cek dependencies)
+```
 
-
+```bash
+chmod 755 data/
+chmod 755 logs/
+chmod 755 whatsapp-session/
+chmod 644 settings.json
+```
 
 #Edit const { RouterOSAPI } = require('node-routeros'); >> const { RouterOSAPI } = require('node-routeros-v2');
 nano /home/acs/gembok-bill/config/mikrotik.js
