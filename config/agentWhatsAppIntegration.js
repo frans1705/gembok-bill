@@ -25,33 +25,8 @@ class AgentWhatsAppIntegration {
                 return;
             }
             
-            // Listen for incoming messages using the correct event structure
-            sock.ev.on('messages.upsert', async ({ messages, type }) => {
-                if (type === 'notify') {
-                    for (const message of messages) {
-                        if (!message.key.fromMe && message.message) {
-                            try {
-                                const from = message.key.remoteJid;
-                                const text = message.message.conversation || message.message.extendedTextMessage?.text;
-                                
-                                if (text) {
-                                    console.log(`📱 [AGENT] Received message from ${from}: ${text}`);
-                                    
-                                    // Handle agent commands
-                                    const response = await this.commands.handleMessage(from, text);
-                                    
-                                    if (response) {
-                                        // Send response back via WhatsApp
-                                        await this.sendMessage(from, response);
-                                    }
-                                }
-                            } catch (error) {
-                                console.error('Error processing agent WhatsApp message:', error);
-                            }
-                        }
-                    }
-                }
-            });
+            // Don't register our own event listener - let main handler call us
+            console.log('🤖 Agent WhatsApp Integration ready (no direct event listener)');
 
             console.log('✅ Agent WhatsApp Commands initialized successfully');
         } catch (error) {
@@ -59,22 +34,87 @@ class AgentWhatsAppIntegration {
         }
     }
 
+    // Method to be called from main handler
+    async handleIncomingMessage(message, from, text) {
+        try {
+            console.log(`📱 [AGENT] Received message from ${from}: ${text}`);
+            
+            // Check if this is an admin command first
+            const { getSetting } = require('./settingsManager');
+            const adminNumbers = [];
+            let i = 0;
+            while (true) {
+                const adminNum = getSetting(`admins.${i}`);
+                if (!adminNum) break;
+                adminNumbers.push(adminNum);
+                i++;
+            }
+            
+            const senderNumber = from.replace('@s.whatsapp.net', '');
+            const isAdmin = adminNumbers.includes(senderNumber);
+            
+            console.log(`📱 [AGENT] DEBUG: senderNumber=${senderNumber}, isAdmin=${isAdmin}, adminNumbers=${JSON.stringify(adminNumbers)}, text=${text}`);
+            
+            // If admin, skip agent handler completely
+            if (isAdmin) {
+                console.log(`📱 [AGENT] Admin detected, skipping agent handler for ALL commands: ${text}`);
+                return false; // Let main handler process it
+            }
+            
+            // Handle agent commands
+            const response = await this.commands.handleMessage(from, text);
+            
+            // Only mark as processed if a response was actually sent
+            if (response !== null) {
+                // Mark message as processed to prevent main handler from processing it
+                message._agentProcessed = true;
+                console.log(`📤 [AGENT] DEBUG: Response from commands: ${response}, type: ${typeof response}`);
+                // Commands already handle sending messages, so we don't need to send again
+                // Just mark as processed to prevent main handler from processing
+                return true; // Message processed by agent handler
+            } else {
+                // If no response was sent, let the main handler process the message
+                console.log(`📤 [AGENT] No response sent, allowing main handler to process`);
+                return false; // Let main handler process it
+            }
+        } catch (error) {
+            console.error('Error processing agent WhatsApp message:', error);
+            return false;
+        }
+    }
+
     // Send message via WhatsApp gateway
     async sendMessage(to, message) {
         try {
-            // Get the socket instance from whatsapp gateway
-            const sock = this.whatsappGateway.getSock ? this.whatsappGateway.getSock() : null;
+            // Ensure message is a string
+            const messageText = typeof message === 'string' ? message : String(message);
+            
+            // Try to get socket from whatsapp gateway
+            let sock = null;
+            console.log(`📤 [AGENT] DEBUG: whatsappGateway exists: ${!!this.whatsappGateway}`);
+            console.log(`📤 [AGENT] DEBUG: whatsappGateway.getSock exists: ${!!(this.whatsappGateway && this.whatsappGateway.getSock)}`);
+            
+            if (this.whatsappGateway && this.whatsappGateway.getSock) {
+                sock = this.whatsappGateway.getSock();
+                console.log(`📤 [AGENT] DEBUG: Got socket from gateway: ${!!sock}`);
+            }
+            
+            // If no socket from gateway, try to get from whatsapp gateway passed in constructor
+            if (!sock && this.whatsappGateway) {
+                try {
+                    sock = this.whatsappGateway.getSock ? this.whatsappGateway.getSock() : null;
+                    console.log(`📤 [AGENT] DEBUG: Got socket from gateway (retry): ${!!sock}`);
+                } catch (e) {
+                    console.log('Could not get socket from whatsapp gateway');
+                }
+            }
             
             if (sock && sock.sendMessage) {
-                await sock.sendMessage(to, { text: message });
-                console.log(`📤 [AGENT] Sent message to ${to}`);
-                return true;
-            } else if (this.whatsappGateway && this.whatsappGateway.sendMessage) {
-                await this.whatsappGateway.sendMessage(to, message);
-                console.log(`📤 [AGENT] Sent message to ${to}`);
+                await sock.sendMessage(to, { text: messageText });
+                console.log(`📤 [AGENT] Sent message to ${to}: ${messageText}`);
                 return true;
             } else {
-                console.log(`📤 [AGENT] [MOCK] Would send to ${to}: ${message}`);
+                console.log(`📤 [AGENT] [MOCK] Would send to ${to}: ${messageText}`);
                 return true;
             }
         } catch (error) {
