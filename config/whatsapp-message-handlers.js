@@ -2,6 +2,7 @@ const logger = require('./logger');
 const { getAdminHelpMessage, getTechnicianHelpMessage, getCustomerHelpMessage, getGeneralHelpMessage, getVersionMessage, getSystemInfoMessage } = require('./help-messages');
 const WhatsAppTroubleCommands = require('./whatsapp-trouble-commands');
 const WhatsAppPPPoECommands = require('./whatsapp-pppoe-commands');
+const AgentAdminCommands = require('./agentAdminCommands');
 
 class WhatsAppMessageHandlers {
     constructor(whatsappCore, whatsappCommands) {
@@ -9,6 +10,7 @@ class WhatsAppMessageHandlers {
         this.commands = whatsappCommands;
         this.troubleCommands = new WhatsAppTroubleCommands(whatsappCore);
         this.pppoeCommands = new WhatsAppPPPoECommands(whatsappCore);
+        this.agentAdminCommands = new AgentAdminCommands();
         
         // Parameter paths for different device parameters (from genieacs-commands.js)
         this.parameterPaths = {
@@ -171,13 +173,17 @@ class WhatsAppMessageHandlers {
             // Debug logging
             logger.info(`🔍 [ROUTING] Processing command: "${originalCommand}" (lowercase: "${command}")`);
             logger.info(`🔍 [ROUTING] Sender: ${senderNumber}, isAdmin: ${isAdmin}, canAccessTechnician: ${canAccessTechnician}`);
+            console.log(`🔍 [ROUTING DEBUG] isAdmin=${isAdmin}, typeof isAdmin=${typeof isAdmin}`);
             
             // Admin commands (termasuk command teknisi)
             if (isAdmin) {
                 logger.info(`🔍 [ROUTING] Routing to handleAdminCommands`);
+                console.log(`🔍 [ROUTING] Calling handleAdminCommands for command: "${command}"`);
                 await this.handleAdminCommands(remoteJid, senderNumber, command, messageText);
                 return;
             }
+            
+            console.log(`🔍 [ROUTING] NOT routing to admin handler, isAdmin=${isAdmin}`);
             
             // Technician commands (untuk teknisi yang bukan admin)
             if (canAccessTechnician && !isAdmin) {
@@ -377,14 +383,25 @@ class WhatsAppMessageHandlers {
         }
         
         // Unknown command for technician
-        await this.commands.sendMessage(remoteJid, 
-            `❓ *PERINTAH TIDAK DIKENAL*\n\nPerintah "${command}" tidak dikenali.\n\nKetik *teknisi* untuk melihat menu teknisi.`
-        );
+        console.log(`Perintah tidak dikenali dari teknisi: ${command}`);
+        // await this.commands.sendMessage(remoteJid, 
+        //     `❓ *PERINTAH TIDAK DIKENAL*\n\nPerintah "${command}" tidak dikenali.\n\nKetik *teknisi* untuk melihat menu teknisi.`
+        // );
     }
 
     // Handle admin commands
     async handleAdminCommands(remoteJid, senderNumber, command, messageText) {
-        // GenieACS Commands
+        // Tangkap SEMUA perintah yang mengandung kata 'agent' lebih dulu
+        if (command.includes('agent') || command === 'agent' || command.includes('daftaragent')) {
+            logger.info(`DEBUG Routing ke handler agent admin: "${command}"`);
+            this.agentAdminCommands._sendMessage = async (jid, message) => {
+                await this.commands.sendMessage(jid, message);
+            };
+            await this.agentAdminCommands.handleAgentAdminCommands(remoteJid, senderNumber, command, messageText);
+            return;
+        }
+
+        // Handler admin WhatsApp lain (cek, refresh, menu, status, dsb)
         if (command.startsWith('cek ')) {
             const customerNumber = messageText.split(' ')[1];
             await this.commands.handleCekStatus(remoteJid, customerNumber);
@@ -685,9 +702,16 @@ class WhatsAppMessageHandlers {
         }
         
         // Unknown command
-        await this.commands.sendMessage(remoteJid, 
-            `❓ *PERINTAH TIDAK DIKENAL*\n\nPerintah "${command}" tidak dikenali.\n\nKetik *admin* untuk melihat menu lengkap.`
-        );
+        // JANGAN kirim pesan untuk command yang tidak dikenali
+        // Ini akan mencegah respon otomatis terhadap setiap pesan
+        console.log(`Perintah tidak dikenali dari admin: ${command}`);
+        // await this.commands.sendMessage(remoteJid, 
+        //     `❓ *PERINTAH TIDAK DIKENAL*
+        //
+        // Perintah "${command}" tidak dikenali.
+        //
+        // Ketik *admin* untuk melihat menu lengkap.`
+        // );
     }
 
     // Handle customer commands
@@ -723,9 +747,12 @@ class WhatsAppMessageHandlers {
         }
         
         // Unknown command for customer
-        await this.commands.sendMessage(remoteJid, 
-            `❓ *PERINTAH TIDAK DIKENAL*\n\nPerintah "${command}" tidak dikenali.\n\nKetik *menu* untuk melihat menu pelanggan.`
-        );
+        // JANGAN kirim pesan untuk command yang tidak dikenali
+        // Ini akan mencegah respon otomatis terhadap setiap pesan
+        console.log(`Perintah tidak dikenali dari pelanggan: ${command}`);
+        // await this.commands.sendMessage(remoteJid, 
+        //     `❓ *PERINTAH TIDAK DIKENAL*\n\nPerintah "${command}" tidak dikenali.\n\nKetik *menu* untuk melihat menu pelanggan.`
+        // );
     }
 
     // Send admin help message
@@ -750,7 +777,6 @@ class WhatsAppMessageHandlers {
     async handleCustomerStatus(remoteJid, senderNumber) {
         try {
             // Implementasi cek status pelanggan
-            // ... existing code ...
             
             await this.commands.sendMessage(remoteJid, 
                 `📱 *STATUS PELANGGAN*\n\nSedang mengecek status perangkat Anda...\nMohon tunggu sebentar.`
@@ -772,7 +798,6 @@ class WhatsAppMessageHandlers {
     async handleCustomerInfo(remoteJid, senderNumber) {
         try {
             // Implementasi info layanan pelanggan
-            // ... existing code ...
             
             await this.commands.sendMessage(remoteJid, 
                 `📋 *INFO LAYANAN*\n\nSedang mengambil informasi layanan Anda...\nMohon tunggu sebentar.`
@@ -1555,7 +1580,15 @@ class WhatsAppMessageHandlers {
                 const superAdminJid = this.core.createJID(this.core.getSuperAdmin());
                 if (superAdminJid) {
                     await sock.sendMessage(superAdminJid, {
-                        text: `${this.core.getSetting('company_header', 'ALIJAYA BOT MANAGEMENT ISP')}\n👋 *Selamat datang, Super Admin!*\n\nAplikasi WhatsApp Bot berhasil dijalankan.\n\nRekening Donasi Untuk Pembangunan Masjid\n# 4206 0101 2214 534 BRI an DKM BAITUR ROHMAN\n\n${this.core.getSetting('footer_info', 'Internet Tanpa Batas')}`
+                        text: `${this.core.getSetting('company_header', 'ALIJAYA BOT MANAGEMENT ISP')}
+👋 *Selamat datang, Super Admin!*
+
+Aplikasi WhatsApp Bot berhasil dijalankan.
+
+Rekening Donasi Untuk Pembangunan Masjid
+# 4206 0101 2214 534 BRI an DKM BAITUR ROHMAN
+
+${this.core.getSetting('footer_info', 'Internet Tanpa Batas')}`
                     });
                     global.superAdminWelcomeSent = true;
                     logger.info('Pesan selamat datang terkirim ke super admin');

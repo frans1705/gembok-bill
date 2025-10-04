@@ -4414,6 +4414,12 @@ async function handleIncomingMessage(sock, message) {
         }
     }
     try {
+        // Skip if message already processed by agent handler
+        if (message._agentProcessed) {
+            console.log('📱 [MAIN] Message already processed by agent handler, skipping');
+            return;
+        }
+        
         // Validasi input
         if (!message || !message.key) {
             logger.warn('Invalid message received', { message: typeof message });
@@ -4474,6 +4480,21 @@ async function handleIncomingMessage(sock, message) {
         // Cek apakah pengirim adalah admin
         const isAdmin = isAdminNumber(senderNumber);
         logger.debug(`Sender admin status`, { sender: senderNumber, isAdmin });
+        
+        // Try to handle with agent handler first (for non-admin messages)
+        if (!isAdmin) {
+            try {
+                const AgentWhatsAppIntegration = require('./agentWhatsAppIntegration');
+                const agentWhatsApp = new AgentWhatsAppIntegration(this);
+                const processed = await agentWhatsApp.handleIncomingMessage(message, remoteJid, messageText);
+                if (processed) {
+                    console.log('📱 [MAIN] Message processed by agent handler, skipping main handler');
+                    return;
+                }
+            } catch (agentError) {
+                console.log('📱 [MAIN] Agent handler not available or error:', agentError.message);
+            }
+        }
         
         // Jika pesan kosong, abaikan
         if (!messageText.trim()) {
@@ -4716,6 +4737,18 @@ Pesan GenieACS telah diaktifkan kembali.`);
             return;
         }
         
+        // Agent admin commands
+        if (isAdmin && (command.includes('agent') || command === 'agent' || command === 'daftaragent')) {
+            console.log(`🤖 [AGENT ADMIN] Processing command: "${command}" from ${senderNumber}`);
+            const AgentAdminCommands = require('./agentAdminCommands');
+            const agentAdminCommands = new AgentAdminCommands();
+            agentAdminCommands._sendMessage = async (jid, message) => {
+                await sock.sendMessage(jid, { text: message });
+            };
+            await agentAdminCommands.handleAgentAdminCommands(remoteJid, senderNumber, command, messageText);
+            return;
+        }
+        
         // Perintah status
         if (command === 'status' || command === '!status' || command === '/status') {
             console.log(`Menjalankan perintah status untuk ${senderNumber}`);
@@ -4869,8 +4902,9 @@ Pesan GenieACS telah diaktifkan kembali.`);
         
         // Jika admin, cek perintah admin lainnya
         if (isAdmin) {
-            // Perintah cek ONU
-            if (command.startsWith('cek ') || command.startsWith('!cek ') || command.startsWith('/cek ')) {
+            // Perintah cek ONU (tapi bukan cek tagihan)
+            if ((command.startsWith('cek ') || command.startsWith('!cek ') || command.startsWith('/cek ')) && 
+                !command.includes('tagihan')) {
                 const customerNumber = command.split(' ')[1];
                 if (customerNumber) {
                     console.log(`Menjalankan perintah cek ONU untuk pelanggan ${customerNumber}`);
@@ -5972,16 +6006,23 @@ Pesan GenieACS telah diaktifkan kembali.`);
     } catch (error) {
         console.error('Error handling incoming message:', error);
         
-        // Coba kirim pesan error ke pengirim
+        // JANGAN kirim pesan error ke pengirim - hanya log error saja
+        // Ini akan mencegah respon otomatis terhadap setiap pesan
+        /*
         try {
             if (sock && message && message.key && message.key.remoteJid) {
                 await sock.sendMessage(message.key.remoteJid, { 
-                    text: `âŒ *ERROR*\n\nTerjadi kesalahan saat memproses pesan: ${error.message}\n\nSilakan coba lagi nanti.`
+                    text: `❌ *ERROR*
+
+Terjadi kesalahan saat memproses pesan: ${error.message}
+
+Silakan coba lagi nanti.`
                 });
             }
         } catch (sendError) {
             console.error('Error sending error message:', sendError);
         }
+        */
     }
 }
 
