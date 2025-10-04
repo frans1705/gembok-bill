@@ -450,18 +450,38 @@ try {
 
             // Set sock instance untuk RX Power Monitor
             rxPowerMonitor.setSock(sock);
-
             // Set sock instance untuk trouble report
             const troubleReport = require('./config/troubleReport');
             troubleReport.setSockInstance(sock);
 
-            logger.info('WhatsApp connected successfully');
+            // Initialize database tables for legacy databases without agent feature
+            const initAgentTables = () => {
+                return new Promise((resolve, reject) => {
+                    try {
+                        // AgentManager sudah memiliki createTables() yang otomatis membuat semua tabel agent
+                        const AgentManager = require('./config/agentManager');
+                        const agentManager = new AgentManager();
+                        console.log('✅ Agent tables created/verified by AgentManager');
+                        resolve();
+                    } catch (error) {
+                        console.error('Error initializing agent tables:', error);
+                        reject(error);
+                    }
+                });
+            };
+
+            // Call init after database connected
+            initAgentTables().then(() => {
+                console.log('Database initialization completed successfully');
+            }).catch((err) => {
+                console.error('Database initialization failed:', err);
+            });
 
             // Initialize PPPoE monitoring jika MikroTik dikonfigurasi
             if (getSetting('mikrotik_host') && getSetting('mikrotik_user') && getSetting('mikrotik_password')) {
                 pppoeMonitor.initializePPPoEMonitoring().then(() => {
                     logger.info('PPPoE monitoring initialized');
-                }).catch(err => {
+                }).catch((err) => {
                     logger.error('Error initializing PPPoE monitoring:', err);
                 });
             }
