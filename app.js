@@ -356,7 +356,7 @@ app.get('/isolir', async (req, res) => {
         const billingManager = require('./config/billing');
 
         const settings = getSettingsWithCache();
-        const companyHeader = getSetting('company_header', 'GEMBOK');
+        const companyHeader = getSetting('company_header', 'NANCY.NET');
         const adminWA = getSetting('admins.0', '6281234567890'); // format 62...
         const adminDisplay = adminWA && adminWA.startsWith('62') ? ('0' + adminWA.slice(2)) : (adminWA || '-');
 
