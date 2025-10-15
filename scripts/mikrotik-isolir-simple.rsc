@@ -7,10 +7,10 @@
 # ===========================================
 
 # Hapus DNS static lama (jika ada)
-/ip dns static remove [find where name="nancy.gantiwifi.online" and address="192.168.8.89"]
+/ip dns static remove [find where name="alijaya.gantiwifi.online" and address="192.168.8.89"]
 
 # Tambahkan DNS static untuk domain aplikasi
-/ip dns static add name="nancy.gantiwifi.online" address="192.168.8.89" ttl=300
+/ip dns static add name="alijaya.gantiwifi.online" address="192.168.8.89" ttl=300
 
 # Arahkan domain populer ke server aplikasi lokal
 /ip dns static add name="google.com" address="192.168.8.89" ttl=300
@@ -59,7 +59,7 @@
 
 # Cek DNS static
 :put "DNS Static Rules:"
-/ip dns static print where name~"nancy.gantiwifi.online"
+/ip dns static print where name~"alijaya.gantiwifi.online"
 
 # Cek NAT rules
 :put "NAT Rules:"

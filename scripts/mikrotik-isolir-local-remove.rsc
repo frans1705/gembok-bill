@@ -6,7 +6,7 @@
 # ===========================================
 
 :put "Menghapus DNS static rules untuk isolir lokal..."
-/ip dns static remove [find where name="nancy.gantiwifi.online" and address="192.168.8.89"]
+/ip dns static remove [find where name="alijaya.gantiwifi.online" and address="192.168.8.89"]
 /ip dns static remove [find where name="google.com" and address="192.168.8.89"]
 /ip dns static remove [find where name="facebook.com" and address="192.168.8.89"]
 /ip dns static remove [find where name="youtube.com" and address="192.168.8.89"]

@@ -6,7 +6,7 @@
 # ===========================================
 
 :put "Menghapus DNS static rules untuk isolir..."
-/ip dns static remove [find where name="nancy.gantiwifi.online" and address="192.168.200.1"]
+/ip dns static remove [find where name="alijaya.gantiwifi.online" and address="192.168.200.1"]
 /ip dns static remove [find where name="localhost" and address="192.168.200.1"]
 
 # ===========================================
@@ -59,7 +59,7 @@
 
 # Cek DNS static
 :put "DNS Static rules tersisa:"
-/ip dns static print where name~"nancy.gantiwifi.online"
+/ip dns static print where name~"alijaya.gantiwifi.online"
 
 # Cek NAT rules
 :put "NAT rules tersisa:"

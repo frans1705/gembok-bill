@@ -1,17 +1,17 @@
 # Mikrotik Script untuk User PPPoE Terisolir
 # IP PPPoE Aktif: 192.168.10.1/24
 # IP PPPoE Isolir: 192.168.200.1/24
-# Halaman Isolir: https://nancy.gantiwifi.online/isolir
+# Halaman Isolir: https://alijaya.gantiwifi.online/isolir
 
 # ===========================================
 # 1. SETUP DNS SERVER UNTUK USER ISOLIR
 # ===========================================
 
 # Hapus DNS server lama untuk isolir (jika ada)
-/ip dns static remove [find where name="nancy.gantiwifi.online" and address="192.168.200.1"]
+/ip dns static remove [find where name="alijaya.gantiwifi.online" and address="192.168.200.1"]
 
 # Tambahkan DNS static untuk domain aplikasi
-/ip dns static add name="nancy.gantiwifi.online" address="192.168.200.1" ttl=300
+/ip dns static add name="alijaya.gantiwifi.online" address="192.168.200.1" ttl=300
 /ip dns static add name="localhost" address="192.168.200.1" ttl=300
 
 # ===========================================
@@ -83,9 +83,9 @@
 /ip proxy set enabled=yes port=8080
 
 # Setup web proxy access list
-/ip proxy access add dst-host=!nancy.gantiwifi.online action=deny comment="Block all except isolir page"
+/ip proxy access add dst-host=!alijaya.gantiwifi.online action=deny comment="Block all except isolir page"
 
-/ip proxy access add dst-host=nancy.gantiwifi.online action=allow comment="Allow isolir page"
+/ip proxy access add dst-host=alijaya.gantiwifi.online action=allow comment="Allow isolir page"
 
 # ===========================================
 # 8. SETUP HOTSPOT (OPSIONAL ALTERNATIVE)
@@ -104,7 +104,7 @@
 
 # Cek DNS static
 :put "=== DNS STATIC RULES ==="
-/ip dns static print where name~"nancy.gantiwifi.online"
+/ip dns static print where name~"alijaya.gantiwifi.online"
 
 # Cek NAT rules
 :put "=== NAT RULES ==="
@@ -128,4 +128,4 @@
 
 :put "=== KONFIGURASI ISOLIR SELESAI ==="
 :put "User PPPoE di 192.168.200.0/24 akan diarahkan ke halaman isolir"
-:put "Halaman isolir: https://nancy.gantiwifi.online/isolir"
+:put "Halaman isolir: https://alijaya.gantiwifi.online/isolir"

@@ -72,7 +72,7 @@ const testMessage = `🧪 *TEST ADMIN BOT*\n\n` +
     `• Fungsi isAdminNumber berfungsi dengan baik\n` +
     `• Pengiriman pesan ke admin berhasil\n` +
     `• Bot siap digunakan\n\n` +
-    `🏢 *NANCY GLOBAL SOLUSI*`;
+    `🏢 *ALIJAYA DIGITAL NETWORK*`;
 
 console.log('📝 Test message yang akan dikirim:');
 console.log(testMessage);
