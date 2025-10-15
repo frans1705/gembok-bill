@@ -149,7 +149,9 @@ async function getVoucherOnlineSettings() {
                             const settings = {};
                             rows.forEach(row => {
                                 settings[row.package_id] = {
+                                    name: row.name || `${row.package_id} - Paket`,
                                     profile: row.profile,
+                                    digits: row.digits || 5,
                                     enabled: row.enabled === 1
                                 };
                             });
@@ -216,7 +218,9 @@ router.get('/', async (req, res) => {
             error: req.query.error,
             company_header,
             adminKontak,
-            settings
+            settings,
+            versionInfo: getVersionInfo(),
+            versionBadge: getVersionBadge()
         });
     } catch (error) {
         res.render('adminHotspot', { users: [], profiles: [], allUsers: [], success: null, error: 'Gagal mengambil data user hotspot: ' + error.message });
